@@ -1,13 +1,15 @@
 import shutil
 import tempfile
-from django.conf import settings
-from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.cache import cache
 from django import forms
+from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
-
 from posts.models import Group, Post
+
+MEDIA_ROOT = tempfile.mkdtemp()
 
 
 class PostPagesTest(TestCase):
@@ -131,6 +133,7 @@ class PostPagesTest(TestCase):
         self.assertEqual(post_group, PostPagesTest.group)
 
 
+@override_settings(MEDIA_ROOT=MEDIA_ROOT)
 class PostImageViewTest(TestCase):
     @classmethod
     def setUpClass(cls):
@@ -170,7 +173,7 @@ class PostImageViewTest(TestCase):
         """Проверяем context страницы index на наличие изображения"""
         response = self.guest_client.get(reverse('index'))
         response_data_image = response.context['page'][0].image
-        expected = f'posts/{self.uploaded.name}'
+        expected = f'posts/{PostImageViewTest.uploaded.name}'
         self.assertEqual(response_data_image,
                          expected)
 
@@ -179,7 +182,7 @@ class PostImageViewTest(TestCase):
         response = self.guest_client.get(reverse(
             'profile', kwargs={'username': 'author'}))
         response_data_image = response.context['page'][0].image
-        expected = f'posts/{self.uploaded.name}'
+        expected = f'posts/{PostImageViewTest.uploaded.name}'
         self.assertEqual(response_data_image,
                          expected)
 
@@ -188,7 +191,7 @@ class PostImageViewTest(TestCase):
         response = self.guest_client.get(reverse(
             'group_slug', kwargs={'slug': 'test_slug'}))
         response_data_image = response.context['page'][0].image
-        expected = f'posts/{self.uploaded.name}'
+        expected = f'posts/{PostImageViewTest.uploaded.name}'
         self.assertEqual(response_data_image,
                          expected)
 
@@ -201,3 +204,42 @@ class PostImageViewTest(TestCase):
         response_data_image = response.context['post'].image
         expected = f'posts/{PostImageViewTest.uploaded.name}'
         self.assertEqual(response_data_image, expected)
+
+
+class CacheTest(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.author = get_user_model().objects.create_user(
+            username='author')
+        cls.group = Group.objects.create(
+            slug='test_slug')
+        cls.post = Post.objects.create(
+            author=cls.author,
+            group=cls.group,
+            text='test_text',
+            )
+        # cls.posts = Post.objects.bulk_create([
+        #     Post(
+        #         author=CacheTest.author,
+        #         group=CacheTest.group,
+        #         text='test_text',
+        #     ) for i in range(5)
+        # ])
+
+    def setUp(self):
+        self.guest_client = Client()
+        self.authorized_client_author = Client()
+        self.authorized_client_author.force_login(CacheTest.author)
+
+    # def test_cache(self):
+    #     response = self.authorized_client_author.get(reverse('index'))
+    #     response_data = len(response.context['page'])
+    #     Post.objects.create(
+    #         author=CacheTest.author,
+    #         group=CacheTest.group,
+    #         text='test_text',
+    #         )
+    #     response2 = self.authorized_client_author.get(reverse('index'))
+    #     response_data2 = len(response2.context['page'])
+    #     self.assertEqual(response_data, response_data2)

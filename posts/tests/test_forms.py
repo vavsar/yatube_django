@@ -73,7 +73,7 @@ class TestPostForm(TestCase):
     def test_edit_post(self):
         '''Валидная форма изменяет запись в Post'''
         posts_count = Post.objects.count()
-        form_data = {'text': 'test_text'}
+        form_data = {'text': '1234'}
         response = self.authorized_client.post(
             TestPostForm.REVERSE_URL_POST_EDIT,
             data=form_data,
@@ -82,7 +82,20 @@ class TestPostForm(TestCase):
         # Количество постов осталось прежним
         self.assertEqual(
             Post.objects.count(), posts_count)
-        # Текст поста не изменился
-        self.assertEqual(TestPostForm.post.text, 'test_text')
+        # Текст поста изменился
+        self.assertEqual(TestPostForm.post.text, '1234')
         # Редирект на страницу поста с прежним id
         self.assertRedirects(response, TestPostForm.REVERSE_URL_POST)
+
+    # def test_cache(self):
+    #     '''Валидная форма изменяет запись в Post'''
+    #     response = self.authorized_client.get(reverse('index'))
+    #     response_data = response.context['posts'][0].text
+    #     form_data = {'text': '1234'}
+    #     response = self.authorized_client.post(
+    #         TestPostForm.REVERSE_URL_POST_EDIT,
+    #         data=form_data,
+    #         follow=True)
+    #     response2 = self.authorized_client.get(reverse('index'))
+    #     response_data2 = response2.context['posts'][0].text
+    #     self.assertEqual(response_data, response_data2)

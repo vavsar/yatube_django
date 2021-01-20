@@ -39,3 +39,8 @@ class Comment(models.Model):
     text = models.TextField(
         'Текст комментария', help_text='Здесь текст комментария')
     created = models.DateTimeField('Дата создания', auto_now_add=True)
+
+
+# class Follow(models.Model):
+#     user = models.ForeignKey(User, related_name='follower')
+#     author = models.ForeignKey(User, related_name='following')

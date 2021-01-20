@@ -32,7 +32,7 @@ def index(request):
     return render(
         request,
         'index.html',
-        {'page': page, 'paginator': paginator}
+        {'page': page, 'posts': post_list, 'paginator': paginator}
     )
 
 
@@ -72,7 +72,7 @@ def post_view(request, username, post_id):
         'author': post.author,
         'post': post,
         'comments': comments,
-        'form': form,
+        'form': form
     }
     return render(request, 'post.html', context)
 
