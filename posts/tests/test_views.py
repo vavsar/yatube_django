@@ -1,6 +1,5 @@
 import shutil
 import tempfile
-from django.core.cache import cache
 from django import forms
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -8,6 +7,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from posts.models import Group, Post
+from django.core.cache import cache
 
 MEDIA_ROOT = tempfile.mkdtemp()
 
@@ -217,29 +217,22 @@ class CacheTest(TestCase):
         cls.post = Post.objects.create(
             author=cls.author,
             group=cls.group,
-            text='test_text',
+            text='1234',
             )
-        # cls.posts = Post.objects.bulk_create([
-        #     Post(
-        #         author=CacheTest.author,
-        #         group=CacheTest.group,
-        #         text='test_text',
-        #     ) for i in range(5)
-        # ])
 
     def setUp(self):
         self.guest_client = Client()
         self.authorized_client_author = Client()
         self.authorized_client_author.force_login(CacheTest.author)
 
-    # def test_cache(self):
-    #     response = self.authorized_client_author.get(reverse('index'))
-    #     response_data = len(response.context['page'])
-    #     Post.objects.create(
-    #         author=CacheTest.author,
-    #         group=CacheTest.group,
-    #         text='test_text',
-    #         )
-    #     response2 = self.authorized_client_author.get(reverse('index'))
-    #     response_data2 = len(response2.context['page'])
-    #     self.assertEqual(response_data, response_data2)
+    def test_cache(self):
+        response = self.authorized_client_author.get(reverse('index'))
+        Post.objects.create(
+            author=CacheTest.author,
+            group=CacheTest.group,
+            text='test_text',
+            )
+        self.assertContains(response, '1234')
+        cache.clear()
+        response2 = self.authorized_client_author.get(reverse('index'))
+        self.assertContains(response2, 'test_text')

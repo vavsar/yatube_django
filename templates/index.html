@@ -7,9 +7,13 @@
 {% cache 20 index_page %}
 
   {% for post in page %}
+
     {% include 'includes/posts_card.html' with post=post %}
+
   {% if not forloop.last %}<hr>{% endif %}
-  {% endfor %}
+
+  
+{% endfor %}
 
 {% endcache %} 
 
