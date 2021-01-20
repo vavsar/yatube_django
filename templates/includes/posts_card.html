@@ -1,0 +1,30 @@
+<div class='card mb-3 mt-1 shadow-sm'>
+    {% load thumbnail %}
+    {% thumbnail post.image "960x339" crop="center" upscale=True as im %}
+        <img class="card-img" src="{{ im.url }}">
+    {% endthumbnail %}
+<div class='card-body'>
+  <p class='card-text'>
+    <!-- Ссылка на страницу автора в атрибуте href; username автора в тексте ссылки -->
+    <a href='{% url 'profile' user %}'><strong class='d-block text-gray-dark'>@{{ user.username }}</strong></a>
+    <!-- Текст поста -->           
+    <p class='post_text'>{{ post.text|truncatewords:25|linebreaksbr }}</p>         
+    {% if not forloop.last %}<hr>{% endif %}
+  </p>
+  <div class='d-flex justify-content-between align-items-center'>
+    <div class='btn-group '>
+      {% if posts.count > 1 %}
+      <a class='btn btn-sm text-muted' href='{% url 'post' post.author post.id %}' role='button'>
+      Посмотреть</a>
+      {% endif %}
+      <!-- Ссылка на редактирование, показывается только автору записи -->
+      {% if request.user == post.author %}
+      <a class='btn btn-sm text-muted' href='{% url 'post_edit' post.author post.id %}' role='button'>
+      Редактировать пост</a>
+      {% endif %}
+
+    </div>
+    <!-- Дата публикации  -->
+    <small class='text-muted'>{{ post.pub_date|date:'d M Y' }}</small>
+  </div>
+</div>
