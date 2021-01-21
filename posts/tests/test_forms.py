@@ -3,16 +3,13 @@ import tempfile
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase, override_settings
+from django.test import Client, TestCase
 from django.urls import reverse
 
 from posts.models import Group, Post
 from posts.forms import PostForm
 
-MEDIA_ROOT = tempfile.mkdtemp()
 
-
-@override_settings(MEDIA_ROOT=MEDIA_ROOT)
 class TestPostForm(TestCase):
     @classmethod
     def setUpClass(cls):
