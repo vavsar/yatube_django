@@ -45,11 +45,6 @@ class PostPagesTest(TestCase):
         cls.REVERSE_PROFILE = reverse(
             'profile', kwargs={'username': 'author'})
 
-    @classmethod
-    def tearDownClass(cls):
-        shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
-        super().tearDownClass()
-
     def setUp(self):
         self.guest_client = Client()
         self.authorized_client_author = Client()

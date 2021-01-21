@@ -1,1 +1,29 @@
-Здесь страница постов авторов, на которых я подписан
+{% extends 'base.html' %}
+{% block title %}Посты тех, на кого подписан{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  {% include "includes/menu.html" with index=True %}
+
+    <h1>Посты тех, на кого подписан</h1>
+
+{% comment %} {% load cache %}
+{% cache 20 index_page %} {% endcomment %}
+
+  {% for post in page %}
+
+    {% include 'includes/posts_card.html' with post=post %}
+
+  {% if not forloop.last %}<hr>{% endif %}
+
+  
+{% endfor %}
+
+{% comment %} {% endcache %}  {% endcomment %}
+
+  {% if page.has_other_pages %}
+    {% include "includes/paginator.html" with items=page paginator=paginator%}
+  {% endif %}
+</div>
+{% endblock %} 
