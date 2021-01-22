@@ -51,16 +51,16 @@ def group_posts(request, slug):
 def profile(request, username):
     user = get_object_or_404(User, username=username)
     posts = user.posts.all()
-    followers = Follow.objects.filter(author=user).count()
-    follows = Follow.objects.filter(user=user).count()
+    # followers = Follow.objects.filter(author=user).count()
+    # follows = Follow.objects.filter(user=user).count()
     paginator = Paginator(posts, PER_PAGE)
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
     context = {
         'author': user,
         'posts': posts,
-        'follows': follows,
-        'followers': followers,
+        # 'follows': follows,
+        # 'followers': followers,
         'page': page,
         'paginator': paginator,
     }
@@ -73,7 +73,7 @@ def profile(request, username):
 
 def post_view(request, username, post_id):
     post = get_object_or_404(Post, id=post_id, author__username=username)
-    comments = Comment.objects.filter(post_id=post_id)
+    comments = post.comments.filter(post_id=post_id)
     form = CommentForm(request.POST or None)
     context = {
         'author': post.author,

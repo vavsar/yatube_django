@@ -7,19 +7,18 @@
     </div>
     <div class='h3 text-muted'>
       <!-- username автора -->
-      {{ author }}
+      <a href='{% url 'profile' author.username %}'>{{ author.username }}</a>
     </div>
   </div>
   <ul class='list-group list-group-flush'>
     <li class='list-group-item'>
       <div class='h6 text-muted'>
-        Подписчиков: {{ followers }} <br />
-      Подписан: {{ follows }}
+        Подписчиков: {{ author.following.count }} <br />
+      Подписан: {{ author.follower.count }}
       </div>
     </li>
     <li class="list-group-item">
-      {% if user.is_authenticated %}
-        {% if author != user %}
+      {% if user.is_authenticated and author != user %}
         {% if following %}
         <a class="btn btn-lg btn-light" 
                 href="{% url 'profile_unfollow' author.username %}" role="button"> 
@@ -31,7 +30,6 @@
                 href="{% url 'profile_follow' author.username %}" role="button">
         Подписаться 
         </a>
-        {% endif %}
         {% endif %}
       {% endif %}
     </li>  
