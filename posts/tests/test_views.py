@@ -86,37 +86,36 @@ class PostPagesTest(TestCase):
                 self.assertEqual(response_context, expect_context)
 
 
-# class CacheTest(TestCase):
-#     @classmethod
-#     def setUpClass(cls):
-#         super().setUpClass()
-#         cls.author = User.objects.create_user(
-#             username=USERNAME)
-#         cls.group = Group.objects.create(
-#             slug=SLUG)
-#         cls.post = Post.objects.create(
-#             author=cls.author,
-#             group=cls.group,
-#             text=TEXT,
-#             )
+class CacheTest(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.author = User.objects.create_user(
+            username=USERNAME)
+        cls.group = Group.objects.create(
+            slug=SLUG)
+        cls.post = Post.objects.create(
+            author=cls.author,
+            group=cls.group,
+            text=TEXT,
+            )
 
-#     def setUp(self):
-#         self.guest_client = Client()
-#         self.authorized_client_author = Client()
-#         self.authorized_client_author.force_login(CacheTest.author)
+    def setUp(self):
+        self.guest_client = Client()
+        self.authorized_client_author = Client()
+        self.authorized_client_author.force_login(CacheTest.author)
 
-#     def test_cache(self):
-#         response = self.authorized_client_author.get(reverse('index'))
-#         Post.objects.create(
-#             author=User.objects.create_user(
-#                 username='new_author'),
-#             group=Group.objects.create(
-#                 slug='new_slug'),
-#             text='NEW_TEXT',
-#             )
-#         response2 = self.authorized_client_author.get(reverse('index'))
-#         self.assertEqual(response.content, response2.content)
-#         cache.clear()
-#         response3 = self.authorized_client_author.get(reverse('index'))
-#         self.assertNotEqual(response.content, response3.content)
-
+    def test_cache(self):
+        response = self.authorized_client_author.get(reverse('index'))
+        Post.objects.create(
+            author=User.objects.create_user(
+                username='new_author'),
+            group=Group.objects.create(
+                slug='new_slug'),
+            text='NEW_TEXT',
+            )
+        response2 = self.authorized_client_author.get(reverse('index'))
+        self.assertEqual(response.content, response2.content)
+        cache.clear()
+        response3 = self.authorized_client_author.get(reverse('index'))
+        self.assertNotEqual(response.content, response3.content)
