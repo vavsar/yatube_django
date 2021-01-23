@@ -2,104 +2,95 @@ from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from posts.models import Group, Post
+from posts.models import Group, Post, User
 
-
-class StaticURLTests(TestCase):
-    def setUp(self):
-        self.guest_client = Client()
-
-    def test_about_urls_accessible(self):
-        response = self.guest_client.get(reverse('about:author'))
-        self.assertEqual(response.status_code, 200)
-        response = self.guest_client.get(reverse('about:tech'))
-        self.assertEqual(response.status_code, 200)
-
-    def test_about_urls_uses_correct_template(self):
-        '''Проверка шаблона для адреса /about/about/.'''
-        response = self.guest_client.get(reverse('about:author'))
-        self.assertTemplateUsed(response, 'about/author.html')
-        response = self.guest_client.get(reverse('about:tech'))
-        self.assertTemplateUsed(response, 'about/tech.html')
-
-    def test_error_urls_uses_correct_template(self):
-        response = self.guest_client.get(reverse('not_found'))
-        self.assertTemplateUsed(response, 'misc/404.html')
-        response = self.guest_client.get(reverse('server_error'))
-        self.assertTemplateUsed(response, 'misc/500.html')
+USERNAME = 'author'
+SLUG = 'test_slug'
+TEXT = 'test_text'
+URL_404 = reverse('not_found')
+URL_500 = reverse('server_error')
+ABOUT_AUTHOR = reverse('about:author')
+ABOUT_TECH = reverse('about:tech')
+FOLLOW_INDEX = reverse("follow_index")
+NEW_POST = reverse('new_post')
+GROUP_SLUG_URL = (reverse('group_slug', args=[SLUG]))
+INDEX_URL = reverse('index')
+PROFILE = reverse('profile', args=[USERNAME])
 
 
 class PostURLTests(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.author = get_user_model().objects.create_user(
-            username='author')
-        cls.other = get_user_model().objects.create_user(
+        cls.author = User.objects.create_user(
+            username=USERNAME)
+        cls.other = User.objects.create_user(
             username='other')
-        cls.group = Group.objects.create(slug='test_slug', title='test_title')
+        cls.group = Group.objects.create(slug=SLUG, title='test_title')
         cls.post = Post.objects.create(
             author=cls.author,
             group=cls.group,
         )
-        cls.REVERSE_URL_INDEX = reverse('index')
-        cls.REVERSE_URL_GROUP_SLUG = (
-            reverse('group_slug', kwargs={'slug': 'test_slug'}))
-        cls.REVERSE_NEW_POST = reverse('new_post')
-        cls.REVERSE_URL_POST = (
+        cls.POST_URL = (
             reverse('post',
-                    kwargs={'username': 'author', 'post_id': cls.post.id}))
-        cls.REVERSE_URL_POST_EDIT = (
+                    args=[cls.post.author.username, cls.post.id]))
+        cls.POST_EDIT_URL = (
             reverse('post_edit',
-                    kwargs={'username': 'author', 'post_id': cls.post.id}))
-        cls.REVERSE_PROFILE = reverse(
-            'profile', kwargs={'username': 'author'})
+                    args=[cls.post.author.username, cls.post.id]))
+        cls.ADD_COMMENT = reverse(
+            'add_comment', args=[cls.post.author.username, cls.post.id])
+        cls.REDIR_POST_EDIT = f'/auth/login/?next={PostURLTests.POST_EDIT_URL}'
 
     def setUp(self):
-        # неавторизованный клиент
         self.guest_client = Client()
-        # авторизованный клиент
         self.authorized_client_author = Client()
-        self.authorized_client_other = Client()
         self.authorized_client_author.force_login(PostURLTests.author)
-        self.authorized_client_other.force_login(PostURLTests.other)
 
-    def test_home_list_url_exists_at_desired_location(self):
-        '''Страница 'index' доступна любому пользователю.'''
-        response = self.guest_client.get(PostURLTests.REVERSE_URL_INDEX)
-        self.assertEqual(response.status_code, 200)
+    def test_static_urls_status_code_and_template(self):
+        templates_url_names = (
+            (ABOUT_AUTHOR, self.guest_client, 200),
+            (ABOUT_AUTHOR, self.authorized_client_author, 200),
+            (ABOUT_TECH, self.guest_client, 200),
+            (ABOUT_TECH, self.authorized_client_author, 200),
+            (URL_404, self.guest_client, 404),
+            (URL_404, self.authorized_client_author, 404),
+            (URL_500, self.guest_client, 500),
+            (URL_500, self.authorized_client_author, 500),
+        )
+        for reverse_name, client, status_code in templates_url_names:
+            with self.subTest():
+                response = response = client.get(reverse_name)
+                self.assertEqual(response.status_code, status_code)
 
-    def test_group_url_exists_at_desired_location(self):
-        '''Страница /group/test-slug/ доступна любому пользователю.'''
-        response = self.guest_client.get(
-            PostURLTests.REVERSE_URL_GROUP_SLUG)
-        self.assertEqual(response.status_code, 200)
-
-    def test_new_url_exists_at_desired_location(self):
-        '''Страница /new/ доступна авторизованному пользователю.'''
-        response = self.authorized_client_author.get(
-            PostURLTests.REVERSE_NEW_POST)
-        self.assertEqual(response.status_code, 200)
-
-    def test_profile_url_exists_at_desired_location(self):
-        '''Страница 'profile' доступна любому пользователю.'''
-        response = self.guest_client.get(PostURLTests.REVERSE_PROFILE)
-        self.assertEqual(response.status_code, 200)
-
-    def test_username_single_post_url_exists_at_desired_location(self):
-        '''Страница 'post' доступна любому пользователю.'''
-        response = self.guest_client.get(PostURLTests.REVERSE_URL_POST)
-        self.assertEqual(response.status_code, 200)
-
-    def test_post_edit_url_exists_at_desired_location(self):
-        '''Страница редактирования поста доступна автор. пользователю.'''
-        response_guest = self.guest_client.get(
-            PostURLTests.REVERSE_URL_POST_EDIT, follow=True)
-        response_other = self.authorized_client_other.get(
-            PostURLTests.REVERSE_URL_POST_EDIT, follow=True)
-        response_author = self.authorized_client_author.get(
-            PostURLTests.REVERSE_URL_POST_EDIT)
-        self.assertRedirects(response_guest, (
-            f'/auth/login/?next={PostURLTests.REVERSE_URL_POST_EDIT}'))
-        self.assertRedirects(response_other, PostURLTests.REVERSE_NEW_POST)
-        self.assertEqual(response_author.status_code, 200)
+    def test_urls_uses_correct_template(self):
+        '''URL-адрес использует соответствующий шаблон.'''
+        templates_url_names = (
+            (URL_404, self.guest_client, 'misc/404.html'),
+            (URL_404, self.authorized_client_author, 'misc/404.html'),
+            (URL_500, self.guest_client, 'misc/500.html'),
+            (URL_500, self.authorized_client_author, 'misc/500.html'),
+            (ABOUT_AUTHOR, self.guest_client, 'about/author.html'),
+            (ABOUT_AUTHOR, self.authorized_client_author, 'about/author.html'),
+            (ABOUT_TECH, self.guest_client, 'about/tech.html'),
+            (ABOUT_TECH, self.authorized_client_author, 'about/tech.html'),
+            (FOLLOW_INDEX, self.authorized_client_author, 'follow.html'),
+            (NEW_POST, self.authorized_client_author, 'post_edit.html'),
+            (GROUP_SLUG_URL, self.guest_client, 'group.html'),
+            (GROUP_SLUG_URL, self.authorized_client_author, 'group.html'),
+            (INDEX_URL, self.guest_client, 'index.html'),
+            (INDEX_URL, self.authorized_client_author, 'index.html'),
+            (PROFILE, self.guest_client, 'profile.html'),
+            (PROFILE, self.authorized_client_author, 'profile.html'),
+            (PostURLTests.POST_URL,
+                self.guest_client, 'post.html'),
+            (PostURLTests.POST_URL,
+                self.authorized_client_author, 'post.html'),
+            (PostURLTests.POST_EDIT_URL,
+                self.authorized_client_author, 'post_edit.html'),
+            (PostURLTests.ADD_COMMENT,
+                self.authorized_client_author, 'includes/comments.html'),
+        )
+        for reverse_name, client, template in templates_url_names:
+            with self.subTest():
+                response = response = client.get(reverse_name)
+                self.assertTemplateUsed(response, template)
