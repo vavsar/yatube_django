@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% block title %}Записи сообщества {{ group }}{% endblock %}
 {% block header %}Последние обновления на сайте{% endblock %}
+
 {% block content %}
 {% load thumbnail %}
 
@@ -9,6 +10,6 @@
   {% if not forloop.last %}<hr>{% endif %}
   {% endfor %}
 
-{% include 'includes/paginator.html' %}
+  {% include 'includes/paginator.html' %}
 
 {% endblock %} 

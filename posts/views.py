@@ -4,6 +4,7 @@ from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import PostForm, CommentForm
+
 from .models import User, Group, Post, Comment, Follow
 
 PER_PAGE = settings.PER_PAGE
@@ -51,35 +52,42 @@ def group_posts(request, slug):
 def profile(request, username):
     user = get_object_or_404(User, username=username)
     posts = user.posts.all()
-    # followers = Follow.objects.filter(author=user).count()
-    # follows = Follow.objects.filter(user=user).count()
     paginator = Paginator(posts, PER_PAGE)
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
+    following = (
+        request.user.is_authenticated and
+        request.user != user and
+        Follow.objects.filter(user=request.user,
+                              author=user).exists()
+    )
     context = {
         'author': user,
         'posts': posts,
-        # 'follows': follows,
-        # 'followers': followers,
         'page': page,
         'paginator': paginator,
+        'following': following,
     }
-    if request.user.is_authenticated:
-        following = Follow.objects.filter(
-            user=request.user, author=user).exists()
-        context['following'] = following
     return render(request, 'profile.html', context)
 
 
 def post_view(request, username, post_id):
+    user = get_object_or_404(User, username=username)
     post = get_object_or_404(Post, id=post_id, author__username=username)
     comments = post.comments.filter(post_id=post_id)
     form = CommentForm(request.POST or None)
+    following = (
+        request.user.is_authenticated and
+        request.user != user and
+        Follow.objects.filter(user=request.user,
+                              author=user).exists()
+    )
     context = {
         'author': post.author,
         'post': post,
         'comments': comments,
-        'form': form
+        'form': form,
+        'following': following,
     }
     return render(request, 'post.html', context)
 
@@ -98,8 +106,6 @@ def new_post(request):
 @login_required
 def post_edit(request, username, post_id):
     posts = get_object_or_404(Post, author__username=username, id=post_id)
-    if posts.author != request.user:
-        return redirect('new_post')
     form = PostForm(
         request.POST or None, files=request.FILES or None, instance=posts)
     if form.is_valid():
@@ -135,9 +141,7 @@ def follow_index(request):
     page = paginator.get_page(page_number)
     context = {
         'page': page,
-        # 'posts': posts,
         'paginator': paginator,
-        # 'author': user
     }
     return render(request, "follow.html", context)
 

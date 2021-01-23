@@ -1,14 +1,13 @@
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from posts.models import Group, Post
+from posts.models import Group, Post, User
 
 
 class PostModelTest(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.user = get_user_model().objects.create(username='testuser')
+        cls.user = User.objects.create(username='testuser')
         cls.post = Post.objects.create(
             text='01234567890123456789',
             author=cls.user,

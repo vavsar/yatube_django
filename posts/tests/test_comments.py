@@ -1,14 +1,14 @@
-from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
-from posts.models import Group, Post
+
+from posts.models import Group, Post, User
 
 
 class TestComments(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.author = get_user_model().objects.create_user(
+        cls.author = User.objects.create_user(
             username='author')
         cls.group = Group.objects.create(
             slug='test_slug')
@@ -17,9 +17,12 @@ class TestComments(TestCase):
             group=cls.group,
             text='test_text',
             )
-        cls.REVERSE_ADD_COMMENTS = reverse(
-            ('add_comment'), kwargs={
-                'username': 'author', 'post_id': cls.post.id})
+        cls.ADD_COMMENTS = reverse(
+            'add_comment',
+            args=[cls.author.username, cls.post.id])
+        cls.LOGIN = reverse('login')
+        cls.LOGIN_REDIRECTS_TO_ADD_COMMENT = reverse(
+            f'{cls.LOGIN}?next={cls.ADD_COMMENTS}')
 
     def setUp(self):
         self.guest_client = Client()
@@ -28,10 +31,9 @@ class TestComments(TestCase):
 
     def test_only_auth_user_can_access_comments(self):
         response_guest = self.guest_client.get(
-            TestComments.REVERSE_ADD_COMMENTS, follow=True)
+            TestComments.ADD_COMMENTS, follow=True)
         response_author = self.authorized_client_author.get(
-            TestComments.REVERSE_ADD_COMMENTS, follow=True)
+            TestComments.ADD_COMMENTS, follow=True)
         self.assertRedirects(response_guest, (
-            f'/auth/login/?next={TestComments.REVERSE_ADD_COMMENTS}')
-        )
+            TestComments.LOGIN_REDIRECTS_TO_ADD_COMMENT)
         self.assertEqual(response_author.status_code, 200)

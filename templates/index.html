@@ -3,22 +3,16 @@
 
 {% block content %}
 <div class="container">
-
   {% include "includes/menu.html" with index=True %}
-
-    <h1>Последние обновления на сайте</h1>
+  <h1>Последние обновления на сайте</h1>
 
 {% comment %} {% load cache %}
 {% cache 20 index_page %} {% endcomment %}
 
   {% for post in page %}
-
     {% include 'includes/posts_card.html' with post=post %}
-
-  {% if not forloop.last %}<hr>{% endif %}
-
-  
-{% endfor %}
+    {% if not forloop.last %}<hr>{% endif %}
+  {% endfor %}
 
 {% comment %} {% endcache %}  {% endcomment %}
 
