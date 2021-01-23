@@ -1,7 +1,6 @@
 import shutil
 import tempfile
 
-
 from django.conf import settings
 from django.core.cache import cache
 from django.test import Client, TestCase

@@ -3,9 +3,9 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .forms import PostForm, CommentForm
+from .forms import CommentForm, PostForm
 
-from .models import User, Group, Post, Comment, Follow
+from .models import Follow, Group, Post, User
 
 PER_PAGE = settings.PER_PAGE
 

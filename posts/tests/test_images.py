@@ -51,15 +51,15 @@ class PostImageViewTest(TestCase):
         cls.POST_URL_EDIT = (
             reverse('post_edit',
                     args=[cls.post.author.username, cls.post.id]))
- 
+
     @classmethod
     def tearDownClass(cls):
         shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
         super().tearDownClass()
- 
+
     def setUp(self):
         self.guest_client = Client()
- 
+
     def test_context_index_page(self):
         """Проверяем context страницы index на наличие изображения"""
         response = self.guest_client.get(INDEX_URL)
@@ -73,14 +73,14 @@ class PostImageViewTest(TestCase):
         response_data_image = response.context['page'][0].image
         expected = f'posts/{UPLOADED.name}'
         self.assertEqual(response_data_image, expected)
- 
+
     def test_group_post_page_context(self):
         """Проверяем context страницы group на наличие изображения"""
         response = self.guest_client.get(GROUP_SLUG_URL)
         response_data_image = response.context['page'][0].image
         expected = f'posts/{UPLOADED.name}'
         self.assertEqual(response_data_image, expected)
- 
+
     def test_single_post_page_context(self):
         """Проверяем context страницы <post_id> на наличие изображения"""
         response = self.guest_client.get(PostImageViewTest.POST_URL)
