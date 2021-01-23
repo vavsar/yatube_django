@@ -1,7 +1,7 @@
 import shutil
 import tempfile
 
-from django import forms
+
 from django.conf import settings
 from django.core.cache import cache
 from django.test import Client, TestCase
@@ -50,7 +50,7 @@ class PostPagesTest(TestCase):
                 author=PostPagesTest.author,
                 group=PostPagesTest.group,
                 text=TEXT,
-            ) for i in range(20)
+            ) for i in range(10)
         ])
 
     @classmethod
@@ -63,42 +63,37 @@ class PostPagesTest(TestCase):
         self.authorized_client_author = Client()
         self.authorized_client_author.force_login(PostPagesTest.author)
 
+    # def test_test(self):
+    #     posts = Post.objects.all()
+    #     item_list = (
+    #         (INDEX_URL, self.authorized_client_author),
+    #         (GROUP_SLUG_URL, self.authorized_client_author), # не работает
+    #         (PostPagesTest.POST_URL, self.authorized_client_author), # не работает
+    #         (PROFILE, self.authorized_client_author),
+    #     )
+    #     for reverse_name, client in item_list:
+    #         with self.subTest():
+    #             response = client.get(reverse_name)
+    #             self.assertListEqual(
+    #                 list(response.context.get('posts')), list(posts))
+
     def test_index_show_correct_context(self):
         response = self.guest_client.get(INDEX_URL)
-        post_author = response.context.get('page')[0].author.username
-        post_group = response.context.get('page')[0].group
-        self.assertEqual(post_author, PostPagesTest.author.username)
-        self.assertEqual(post_group, PostPagesTest.group)
+        posts = Post.objects.all()
+        context = response.context.get('posts')
+        self.assertListEqual(
+            list(context), list(posts))
+
+    def test_profile_show_correct_context(self):
+        response = self.guest_client.get(PROFILE)
+        posts = Post.objects.all()
+        context = response.context.get('posts')
+        self.assertListEqual(
+            list(context), list(posts))
 
     def test_group_post_show_correct_context(self):
-        '''Шаблон group_slug сформирован с правильным контекстом.'''
         response = self.guest_client.get(GROUP_SLUG_URL)
-        self.assertEqual(response.context.get('group').slug, 'test_slug')
-
-    def test_new_post_show_correct_context(self):
-        '''Шаблон new_post сформирован с правильным контекстом.'''
-        response = self.authorized_client_author.get(NEW_POST)
-        form_fields = {
-            'group': forms.fields.ChoiceField,
-            'text': forms.fields.CharField,
-        }
-        for value, expected in form_fields.items():
-            with self.subTest(value=value):
-                form_field = response.context.get('form').fields.get(value)
-                self.assertIsInstance(form_field, expected)
-
-    def test_post_edit_page_correct_context(self):
-        response = self.authorized_client_author.get(
-            PostPagesTest.POST_URL_EDIT
-        )
-        form_fields = {
-            'group': forms.fields.ChoiceField,
-            'text': forms.fields.CharField,
-        }
-        for value, expected in form_fields.items():
-            with self.subTest(value=value):
-                form_field = response.context.get('form').fields.get(value)
-                self.assertIsInstance(form_field, expected)
+        self.assertEqual(response.context.get('group').slug, SLUG)
 
     def test_post_view_page_correct_context(self):
         response = self.authorized_client_author.get(
@@ -108,7 +103,7 @@ class PostPagesTest(TestCase):
         self.assertEqual(
             response.context.get('post').group, PostPagesTest.group)
         self.assertEqual(
-            response.context.get('post').text, 'test_text')
+            response.context.get('post').text, TEXT)
 
     def test_index_page_paginator_posts_count_correct(self):
         response = self.authorized_client_author.get(INDEX_URL)
@@ -116,44 +111,37 @@ class PostPagesTest(TestCase):
         self.assertEqual(
             response.context['page'][0].group.title, PostPagesTest.group.title)
 
-    def test_profile_show_correct_context(self):
-        response = self.authorized_client_author.get(PROFILE)
-        post_author = response.context.get('page')[0].author.username
-        post_group = response.context.get('page')[0].group
-        self.assertEqual(post_author, 'author')
-        self.assertEqual(post_group, PostPagesTest.group)
 
+class CacheTest(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.author = User.objects.create_user(
+            username=USERNAME)
+        cls.group = Group.objects.create(
+            slug=SLUG)
+        cls.post = Post.objects.create(
+            author=cls.author,
+            group=cls.group,
+            text=TEXT,
+            )
 
-# class CacheTest(TestCase):
-#     @classmethod
-#     def setUpClass(cls):
-#         super().setUpClass()
-#         cls.author = User.objects.create_user(
-#             username=USERNAME)
-#         cls.group = Group.objects.create(
-#             slug=SLUG)
-#         cls.post = Post.objects.create(
-#             author=cls.author,
-#             group=cls.group,
-#             text=TEXT,
-#             )
+    def setUp(self):
+        self.guest_client = Client()
+        self.authorized_client_author = Client()
+        self.authorized_client_author.force_login(CacheTest.author)
 
-#     def setUp(self):
-#         self.guest_client = Client()
-#         self.authorized_client_author = Client()
-#         self.authorized_client_author.force_login(CacheTest.author)
-
-#     def test_cache(self):
-#         response = self.authorized_client_author.get(reverse('index'))
-#         Post.objects.create(
-#             author=User.objects.create_user(
-#                 username='new_author'),
-#             group=Group.objects.create(
-#                 slug='new_slug'),
-#             text='NEW_TEXT',
-#             )
-#         response2 = self.authorized_client_author.get(reverse('index'))
-#         self.assertEqual(response.content, response2.content)
-#         cache.clear()
-#         response3 = self.authorized_client_author.get(reverse('index'))
-#         self.assertNotEqual(response.content, response3.content)
+    def test_cache(self):
+        response = self.authorized_client_author.get(reverse('index'))
+        Post.objects.create(
+            author=User.objects.create_user(
+                username='new_author'),
+            group=Group.objects.create(
+                slug='new_slug'),
+            text='NEW_TEXT',
+            )
+        response2 = self.authorized_client_author.get(reverse('index'))
+        self.assertEqual(response.content, response2.content)
+        cache.clear()
+        response3 = self.authorized_client_author.get(reverse('index'))
+        self.assertNotEqual(response.content, response3.content)

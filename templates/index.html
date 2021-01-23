@@ -6,15 +6,15 @@
   {% include "includes/menu.html" with index=True %}
   <h1>Последние обновления на сайте</h1>
 
-{% comment %} {% load cache %}
-{% cache 20 index_page %} {% endcomment %}
+ {% load cache %}
+{% cache 20 index_page %} 
 
   {% for post in page %}
     {% include 'includes/posts_card.html' with post=post %}
     {% if not forloop.last %}<hr>{% endif %}
   {% endfor %}
 
-{% comment %} {% endcache %}  {% endcomment %}
+ {% endcache %}  
 
   {% if page.has_other_pages %}
     {% include "includes/paginator.html" with items=page paginator=paginator%}

@@ -1,12 +1,14 @@
 import shutil
 import tempfile
+
+from django import forms
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from posts.models import Group, Post, User
 from posts.forms import PostForm
+from posts.models import Group, Post, User
 
 USERNAME = 'author'
 SLUG = 'test_slug'
@@ -156,3 +158,27 @@ class TestPostForm(TestCase):
         self.assertNotEqual(post[0].text, form_data['text'])
         self.assertNotEqual(post[0].group.id, form_data['group'])
 
+    def test_new_post_show_correct_context(self):
+        '''Шаблон new_post сформирован с правильным контекстом.'''
+        response = self.authorized_client.get(NEW_POST)
+        form_fields = {
+            'group': forms.fields.ChoiceField,
+            'text': forms.fields.CharField,
+        }
+        for value, expected in form_fields.items():
+            with self.subTest(value=value):
+                form_field = response.context.get('form').fields.get(value)
+                self.assertIsInstance(form_field, expected)
+
+    def test_post_edit_page_correct_context(self):
+        response = self.authorized_client.get(
+            TestPostForm.POST_EDIT_URL
+        )
+        form_fields = {
+            'group': forms.fields.ChoiceField,
+            'text': forms.fields.CharField,
+        }
+        for value, expected in form_fields.items():
+            with self.subTest(value=value):
+                form_field = response.context.get('form').fields.get(value)
+                self.assertIsInstance(form_field, expected)
