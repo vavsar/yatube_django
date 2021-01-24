@@ -15,6 +15,7 @@ SLUG = 'test_slug'
 TEXT = 'test_text'
 INDEX_URL = reverse('index')
 NEW_POST = reverse('new_post')
+LOGIN = reverse('login')
 
 SMALL_GIF = (
     b'\x47\x49\x46\x38\x39\x61\x02\x00'
@@ -52,18 +53,16 @@ class TestPostForm(TestCase):
         cls.POST_EDIT_URL = (
             reverse('post_edit',
                     args=[cls.author.username, cls.post.id]))
-        cls.expected_redirect_new = f'/auth/login/?next={NEW_POST}'
-        cls.expected_redirect_edit = f'/auth/login/?next={cls.POST_EDIT_URL}'
+        cls.expected_redirect_new = f'{LOGIN}?next={NEW_POST}'
+        cls.expected_redirect_edit = f'{LOGIN}?next={cls.POST_EDIT_URL}'
+        cls.guest_client = Client()
+        cls.authorized_client = Client()
+        cls.authorized_client.force_login(TestPostForm.author)
 
     @classmethod
     def tearDownClass(cls):
         shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
         super().tearDownClass()
-
-    def setUp(self):
-        self.guest_client = Client()
-        self.authorized_client = Client()
-        self.authorized_client.force_login(TestPostForm.author)
 
     def test_create_post_auth(self):
         '''Валидная форма создает запись в Post'''
@@ -95,9 +94,8 @@ class TestPostForm(TestCase):
         '''Гостевой акк не создает запись в Post'''
         posts_count = Post.objects.count()
         form_data = {
-            'author': TestPostForm.post.author,
-            'text': TestPostForm.post.text,
             'group': TestPostForm.group.id,
+            'text': TestPostForm.post.text,
             'image': UPLOADED}
         response = self.guest_client.post(
             NEW_POST,
@@ -107,10 +105,6 @@ class TestPostForm(TestCase):
         self.assertRedirects(response, TestPostForm.expected_redirect_new)
         # Количество постов не изменилось
         self.assertEqual(Post.objects.count(), posts_count)
-        # Исключаю пост, созданный в классе
-        post = Post.objects.exclude(id=self.post.id)
-        # Пост не создался
-        self.assertFalse(post.exists())
 
     def test_edit_post_auth(self):
         '''Валидная форма изменяет запись в Post'''
@@ -125,9 +119,6 @@ class TestPostForm(TestCase):
         # Пост с указанными данными существует
         post = Post.objects.filter(id=self.post.id)
         self.assertTrue(post.exists())
-        # Постов с другими данными не существует
-        not_post = Post.objects.exclude(id=self.post.id)
-        self.assertFalse(not_post.exists())
         # Редирект происходит на страницу поста
         self.assertRedirects(response, TestPostForm.POST_URL)
         # Количество постов осталось прежним
@@ -147,10 +138,6 @@ class TestPostForm(TestCase):
             follow=True)
         # Пост с указанными данными существует
         post = Post.objects.filter(id=self.post.id)
-        self.assertTrue(post.exists())
-        # Постов с другими данными не существует
-        not_post = Post.objects.exclude(id=self.post.id)
-        self.assertFalse(not_post.exists())
         # Редирект на страницу логина
         self.assertRedirects(
             response, TestPostForm.expected_redirect_edit)
@@ -161,6 +148,8 @@ class TestPostForm(TestCase):
     def test_new_post_show_correct_context(self):
         '''Шаблон new_post сформирован с правильным контекстом.'''
         response = self.authorized_client.get(NEW_POST)
+        response2 = self.authorized_client.get(
+            TestPostForm.POST_EDIT_URL)
         form_fields = {
             'group': forms.fields.ChoiceField,
             'text': forms.fields.CharField,
@@ -168,17 +157,6 @@ class TestPostForm(TestCase):
         for value, expected in form_fields.items():
             with self.subTest(value=value):
                 form_field = response.context.get('form').fields.get(value)
+                form_field2 = response2.context.get('form').fields.get(value)
                 self.assertIsInstance(form_field, expected)
-
-    def test_post_edit_page_correct_context(self):
-        response = self.authorized_client.get(
-            TestPostForm.POST_EDIT_URL
-        )
-        form_fields = {
-            'group': forms.fields.ChoiceField,
-            'text': forms.fields.CharField,
-        }
-        for value, expected in form_fields.items():
-            with self.subTest(value=value):
-                form_field = response.context.get('form').fields.get(value)
-                self.assertIsInstance(form_field, expected)
+                self.assertIsInstance(form_field2, expected)

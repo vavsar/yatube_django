@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% block title %}
-{% if is_edit %}Редактировать
+{% if post %}Редактировать
 {% else %}Создать пост
 {% endif %}
 {% endblock %}
@@ -12,7 +12,7 @@
   <div class='col-md-8 p-5'>
     <div class='card'>
       <div class='card-header'>
-      {% if is_edit %}Редактировать пост
+      {% if post %}Редактировать пост
       {% else %}Добавить новую запись
       {% endif %}</div>
       <div class='card-body'>
@@ -38,7 +38,7 @@
 
           <div class='col-md-6 offset-md-4'>              
             <button type='submit' class='btn btn-primary'>
-              {% if is_edit %}Сохранить
+              {% if post %}Сохранить
               {% else %}Добавить
               {% endif %}
             </button>
