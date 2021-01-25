@@ -77,4 +77,3 @@ class FollowTest(TestCase):
         self.assertNotEqual(expected_post, actual_post)
         self.assertNotIn(FollowTest.post_not_follower,
                          response_not_follower.context['page'])
-

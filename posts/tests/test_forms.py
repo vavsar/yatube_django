@@ -57,7 +57,7 @@ class TestPostForm(TestCase):
         cls.expected_redirect_edit = f'{LOGIN}?next={cls.POST_EDIT_URL}'
         cls.guest_client = Client()
         cls.authorized_client = Client()
-        cls.authorized_client.force_login(TestPostForm.author)
+        cls.authorized_client.force_login(cls.author)
 
     @classmethod
     def tearDownClass(cls):
