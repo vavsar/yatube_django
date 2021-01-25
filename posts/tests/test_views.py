@@ -74,6 +74,7 @@ class PostPagesTest(TestCase):
         response = self.authorized_client_author.get(INDEX_URL)
         self.assertEqual(len(response.context['page']), 10)
 
+    # Не знаю как сделать в цикл и проверить единственность.
     def test_correct_context(self):
         test_pages = [
             INDEX_URL,
@@ -91,23 +92,23 @@ class PostPagesTest(TestCase):
                 self.assertEqual(response_post_context, self.post)
 
 
-# class CacheTest(TestCase):
-#     @classmethod
-#     def setUpClass(cls):
-#         super().setUpClass()
-#         cls.guest_client = Client()
+class CacheTest(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.guest_client = Client()
 
-#     def test_cache(self):
-#         response = self.guest_client.get(reverse('index'))
-#         Post.objects.create(
-#             author=User.objects.create_user(
-#                 username='new_author'),
-#             group=Group.objects.create(
-#                 slug='new_slug'),
-#             text='NEW_TEXT',
-#             )
-#         response2 = self.guest_client.get(INDEX_URL)
-#         self.assertEqual(response.content, response2.content)
-#         cache.clear()
-#         response3 = self.guest_client.get(INDEX_URL)
-#         self.assertNotEqual(response.content, response3.content)
+    def test_cache(self):
+        response = self.guest_client.get(reverse('index'))
+        Post.objects.create(
+            author=User.objects.create_user(
+                username='new_author'),
+            group=Group.objects.create(
+                slug='new_slug'),
+            text='NEW_TEXT',
+            )
+        response2 = self.guest_client.get(INDEX_URL)
+        self.assertEqual(response.content, response2.content)
+        cache.clear()
+        response3 = self.guest_client.get(INDEX_URL)
+        self.assertNotEqual(response.content, response3.content)

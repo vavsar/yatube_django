@@ -23,14 +23,14 @@ class TestComments(TestCase):
             )
         cls.POST_URL = (
             reverse('post',
-                    args=[cls.post.author.username, cls.post.id]))
-        cls.ADD_COMMENTS = reverse(
+                    args=[USERNAME, cls.post.id]))
+        cls.ADD_COMMENT = reverse(
             'add_comment',
-            args=[cls.author.username,
+            args=[USERNAME,
                   cls.post.id])
         cls.LOGIN = reverse('login')
         cls.REDIR_LOGIN_TO_ADD_COMM = (
-            f'{TestComments.LOGIN}?next={TestComments.ADD_COMMENTS}')
+            f'{TestComments.LOGIN}?next={TestComments.ADD_COMMENT}')
 
     def setUp(self):
         self.guest_client = Client()
@@ -38,27 +38,28 @@ class TestComments(TestCase):
         self.authorized_client_author.force_login(TestComments.author)
 
     def test_auth_user_can_post_comments(self):
-        test_item = Comment.objects.create(
-            author=TestComments.author,
-            post=TestComments.post,
-            text=TEXT
-        )
-        response_auth = self.authorized_client_author.get(
-            TestComments.POST_URL)
-        self.assertEqual(
-            response_auth.context['comments'][0].author, test_item.author)
-        self.assertEqual(
-            response_auth.context['comments'][0].post, test_item.post)
-        self.assertEqual(
-            response_auth.context['comments'][0].text, test_item.text)
+        # Очищаю все комменты, чтобы новый был единственным
+        Comment.objects.all().delete()
+        comments_count = Comment.objects.count()
+        form_data = {
+            'text': '1234'
+            }
+        self.authorized_client_author.post(
+            self.ADD_COMMENT,
+            data=form_data,
+            follow=True)
+        new_comment = Comment.objects.get()
+        self.assertNotEqual(comments_count, comments_count+1)
+        self.assertEqual(new_comment.text, form_data['text'])
+        self.assertEqual(new_comment.post, self.post)
+        self.assertEqual(new_comment.author, self.post.author)
 
     def test_guest_user_cant_post_comments(self):
-        test_item = Comment.objects.create(
-            author=TestComments.author,
-            post=TestComments.post,
-            text=TEXT
-        )
-        obj = Comment.objects.filter(author=test_item.author)
-        response_guest = self.guest_client.get(
-            TestComments.POST_URL)
-        self.assertNotIn(obj, response_guest.context['comments'])
+        comments_count = Comment.objects.count()
+        form_data = {'text': '1234'}
+        response = self.guest_client.post(
+            self.ADD_COMMENT,
+            data=form_data,
+            follow=True)
+        self.assertRedirects(response, self.REDIR_LOGIN_TO_ADD_COMM)
+        self.assertEqual(comments_count, Comment.objects.count())
