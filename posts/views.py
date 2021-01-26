@@ -122,10 +122,10 @@ def add_comment(request, username, post_id):
     post = get_object_or_404(Post, author__username=username, id=post_id)
     form = CommentForm(request.POST or None)
     if form.is_valid():
-        comments = form.save(commit=False)
-        comments.author = request.user
-        comments.post = post
-        comments.save()
+        comment = form.save(commit=False)
+        comment.author = request.user
+        comment.post = post
+        comment.save()
         return redirect('post', username, post_id)
     return render(
         request, 'includes/comments.html', {

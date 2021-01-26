@@ -3,8 +3,10 @@ from django.urls import reverse
 from posts.models import Group, Post, User, Comment
 
 USERNAME = 'author'
+USERNAME_2 = 'other'
 SLUG = 'test_slug'
 TEXT = 'test_text'
+LOGIN = reverse('login')
 
 
 class TestComments(TestCase):
@@ -14,6 +16,8 @@ class TestComments(TestCase):
 
         cls.author = User.objects.create_user(
             username=USERNAME)
+        cls.other = User.objects.create_user(
+            username=USERNAME_2)
         cls.group = Group.objects.create(
             slug=SLUG)
         cls.post = Post.objects.create(
@@ -26,33 +30,29 @@ class TestComments(TestCase):
                     args=[USERNAME, cls.post.id]))
         cls.ADD_COMMENT = reverse(
             'add_comment',
-            args=[USERNAME,
-                  cls.post.id])
-        cls.LOGIN = reverse('login')
+            args=[USERNAME, cls.post.id])
         cls.REDIR_LOGIN_TO_ADD_COMM = (
-            f'{TestComments.LOGIN}?next={TestComments.ADD_COMMENT}')
+            f'{LOGIN}?next={TestComments.ADD_COMMENT}')
 
     def setUp(self):
         self.guest_client = Client()
         self.authorized_client_author = Client()
         self.authorized_client_author.force_login(TestComments.author)
+        self.authorized_client_other = Client()
+        self.authorized_client_other.force_login(TestComments.other)
 
     def test_auth_user_can_post_comments(self):
-        # Очищаю все комменты, чтобы новый был единственным
-        Comment.objects.all().delete()
-        comments_count = Comment.objects.count()
         form_data = {
             'text': '1234'
             }
-        self.authorized_client_author.post(
+        response = self.authorized_client_other.post(
             self.ADD_COMMENT,
             data=form_data,
             follow=True)
-        new_comment = Comment.objects.get()
-        self.assertNotEqual(comments_count, comments_count+1)
+        new_comment = response.context['comments'].last()
+        self.assertNotEqual(new_comment.author, self.post.author)
         self.assertEqual(new_comment.text, form_data['text'])
         self.assertEqual(new_comment.post, self.post)
-        self.assertEqual(new_comment.author, self.post.author)
 
     def test_guest_user_cant_post_comments(self):
         comments_count = Comment.objects.count()

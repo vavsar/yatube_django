@@ -68,10 +68,12 @@ class PostURLTests(TestCase):
                 self.authorized_client_author, 200),
             (FOLLOW_INDEX, self.authorized_client_author, 200)
         )
-        for path_name, client, status_code in URLS_LIST:
+        # вкусовщина, а не ошибка! имя path_name
+        # мне подсказал НАСТАВНИК В СЛАКЕ!
+        for url, client, status_code in URLS_LIST:
             with self.subTest():
                 self.assertEqual(
-                    client.get(path_name).status_code, status_code)
+                    client.get(url).status_code, status_code)
 
     def test_urls_uses_correct_template(self):
         URL_LIST = (
@@ -89,9 +91,9 @@ class PostURLTests(TestCase):
             (PostURLTests.POST_EDIT_URL,
                 self.authorized_client_author, 'post_edit.html'),
         )
-        for reverse_name, client, template in URL_LIST:
+        for url, client, template in URL_LIST:
             with self.subTest():
-                self.assertTemplateUsed(client.get(reverse_name), template)
+                self.assertTemplateUsed(client.get(url), template)
 
     def test_urls_correct_redirect(self):
         URL_LIST = (

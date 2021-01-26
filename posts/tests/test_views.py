@@ -13,7 +13,7 @@ SLUG = 'test_slug'
 TEXT = 'test_text'
 ABOUT_AUTHOR = reverse('about:author')
 ABOUT_TECH = reverse('about:tech')
-FOLLOW_INDEX = reverse("follow_index")
+FOLLOW_INDEX = reverse('follow_index')
 NEW_POST = reverse('new_post')
 GROUP_SLUG_URL = (reverse('group_slug', args=[SLUG]))
 INDEX_URL = reverse('index')
@@ -74,22 +74,39 @@ class PostPagesTest(TestCase):
         response = self.authorized_client_author.get(INDEX_URL)
         self.assertEqual(len(response.context['page']), 10)
 
-    # Не знаю как сделать в цикл и проверить единственность.
-    def test_correct_context(self):
-        test_pages = [
-            INDEX_URL,
+    def test_correct_context_with_page(self):
+        test_pages = (
             GROUP_SLUG_URL,
             PROFILE,
-            PostPagesTest.POST_URL,
-        ]
+        )
         for url_name in test_pages:
-            with self.subTest():
+            with self.subTest(url_name):
                 response = self.authorized_client_author.get(url_name)
-                if "post" in response.context:
-                    response_post_context = response.context["post"]
-                else:
-                    response_post_context = response.context["page"][0]
+                response_post_context = response.context['page']
+                self.assertEqual(len(response_post_context), 1)
+                self.assertEqual(response_post_context[0], self.post)
+
+    def test_correct_context_with_post(self):
+        test_pages = (
+            INDEX_URL,
+            PostPagesTest.POST_URL,
+        )
+        for url_name in test_pages:
+            with self.subTest(url_name):
+                response = self.authorized_client_author.get(url_name)
+                response_post_context = response.context['post']
                 self.assertEqual(response_post_context, self.post)
+
+    def test_author_for_profile_and_post_pages(self):
+        test_pages = (
+            PROFILE,
+            PostPagesTest.POST_URL,
+        )
+        for url_name in test_pages:
+            with self.subTest(url_name):
+                response = self.authorized_client_author.get(url_name)
+                response_context = response.context['post']
+                self.assertEqual(response_context.author, self.post.author)
 
 
 class CacheTest(TestCase):
@@ -99,12 +116,10 @@ class CacheTest(TestCase):
         cls.guest_client = Client()
 
     def test_cache(self):
-        response = self.guest_client.get(reverse('index'))
+        response = self.guest_client.get(INDEX_URL)
         Post.objects.create(
             author=User.objects.create_user(
                 username='new_author'),
-            group=Group.objects.create(
-                slug='new_slug'),
             text='NEW_TEXT',
             )
         response2 = self.guest_client.get(INDEX_URL)
