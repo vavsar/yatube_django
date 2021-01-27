@@ -78,29 +78,37 @@ class PostPagesTest(TestCase):
         response = self.authorized_client_author.get(INDEX_URL)
         self.assertEqual(len(response.context['page']), PER_PAGE)
 
-    def test_correct_context(self):
+    def test_correct_context_post(self):
         Follow.objects.create(
             user=self.other,
             author=self.author
         )
         test_pages = (
-            (INDEX_URL, self.guest_client, 'page'),
-            (FOLLOW_INDEX, self.authorized_client_other, 'page'),
-            (PostPagesTest.POST_URL, self.authorized_client_author, 'post'),
-            (PostPagesTest.POST_URL, self.authorized_client_author, 'author'),
-            (PROFILE, self.authorized_client_author, 'page'),
-            (PROFILE, self.authorized_client_author, 'author'),
-            (GROUP_SLUG_URL, self.authorized_client_author, 'page'),
+            (INDEX_URL, self.guest_client),
+            (FOLLOW_INDEX, self.authorized_client_other),
+            (PostPagesTest.POST_URL, self.authorized_client_author),
+            (PROFILE, self.authorized_client_author),
+            (GROUP_SLUG_URL, self.authorized_client_author),
         )
-        for url_name, client, context in test_pages:
+        for url_name, client in test_pages:
             with self.subTest(url_name):
-                response_post_context = client.get(url_name).context[context]
-                if context == 'author':
-                    self.assertEqual(self.post.author, response_post_context)
-                elif context == 'post':
-                    self.assertEqual(self.post, response_post_context)
+                response_context = client.get(url_name).context
+                if 'post' in response_context:
+                    self.assertEqual(self.post, response_context['post'])
                 else:
-                    self.assertIn(self.post, response_post_context)
+                    self.assertIn(self.post, response_context['page'])
+
+    def test_correct_context_author(self):
+        test_pages = (
+            PostPagesTest.POST_URL,
+            PROFILE,
+        )
+        for url_name in test_pages:
+            with self.subTest(url_name):
+                response_context = (
+                    self.authorized_client_author.get(url_name).context)
+                self.assertEqual(
+                    self.post.author, response_context['author'])
 
     def test_post_gets_into_right_group(self):
         test_post = Post.objects.create(
@@ -108,8 +116,8 @@ class PostPagesTest(TestCase):
             text='wonderful_text',
             group=self.group_2,
         )
-        response_profile = self.authorized_client_author.get(GROUP_SLUG_2_URL)
-        self.assertIn(test_post, response_profile.context['page'])
+        response_profile = self.authorized_client_author.get(GROUP_SLUG_URL)
+        self.assertNotIn(test_post, response_profile.context['page'])
 
 
 class CacheTest(TestCase):

@@ -1,5 +1,6 @@
 import shutil
 import tempfile
+
 from django import forms
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -67,7 +68,6 @@ class TestPostForm(TestCase):
         super().tearDownClass()
 
     def test_create_post_auth(self):
-        posts_count = Post.objects.count()
         form_data = {
             'text': 'new_text',
             'group': self.group.id,
@@ -76,7 +76,7 @@ class TestPostForm(TestCase):
             NEW_POST,
             data=form_data,
             follow=True)
-        self.assertEqual(Post.objects.count(), posts_count+1)
+        self.assertEqual(Post.objects.count(), 2)
         post = Post.objects.exclude(id=self.post.id)[0]
         self.assertRedirects(response, INDEX_URL)
         self.assertEqual(
@@ -124,13 +124,14 @@ class TestPostForm(TestCase):
         posts_count = Post.objects.count()
         form_data = {
             'text': 'double_new_text',
-            'group': 'new_group',
+            'group': self.group.id,
             'image': UPLOADED}
         self.guest_client.post(
             TestPostForm.POST_EDIT_URL,
             data=form_data,
             follow=True)
         self.assertEqual(Post.objects.count(), posts_count)
+        self.assertEqual(Post.objects.count(), 1)
         post_after = Post.objects.get()
         self.assertEqual(self.post, post_after)
 
