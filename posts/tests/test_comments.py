@@ -49,7 +49,7 @@ class TestComments(TestCase):
             self.ADD_COMMENT,
             data=form_data,
             follow=True)
-        self.assertEqual(Comment.objects.count(), 1)
+        self.assertEqual(len(response.context['comments']), 1)
         new_comment = response.context['comments'][0]
         self.assertEqual(new_comment.author, self.other)
         self.assertEqual(new_comment.text, form_data['text'])

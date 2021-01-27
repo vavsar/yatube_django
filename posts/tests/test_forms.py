@@ -121,7 +121,6 @@ class TestPostForm(TestCase):
 
     def test_edit_post_guest(self):
         '''Гостевой акк не может добавить запись в Post'''
-        posts_count = Post.objects.count()
         form_data = {
             'text': 'double_new_text',
             'group': self.group.id,
@@ -130,7 +129,6 @@ class TestPostForm(TestCase):
             TestPostForm.POST_EDIT_URL,
             data=form_data,
             follow=True)
-        self.assertEqual(Post.objects.count(), posts_count)
         self.assertEqual(Post.objects.count(), 1)
         post_after = Post.objects.get()
         self.assertEqual(self.post, post_after)

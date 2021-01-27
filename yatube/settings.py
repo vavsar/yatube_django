@@ -29,17 +29,21 @@ SECRET_KEY = '*h5sri_wdjfb1h2#v*xt$ng#t)+)%q+pkpfwv2av0%()c-yqo8'
 DEBUG = True
 
 ALLOWED_HOSTS = [
+    "*",
     "localhost",
     "127.0.0.1",
     "[::1]",
     "testserver",
 ]
 
-# Login
+INTERNAL_IPS = [
+    "127.0.0.1",
+]
 
+# Login
 LOGIN_URL = "/auth/login/"
 LOGIN_REDIRECT_URL = "index"
-# LOGOUT_REDIRECT_URL = "index"
+LOGOUT_REDIRECT_URL = "index"
 
 
 #  подключаем движок filebased.EmailBackend
@@ -61,6 +65,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'sorl.thumbnail',
+    "debug_toolbar",
 ]
 
 MIDDLEWARE = [
@@ -71,6 +76,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
 ]
 
 ROOT_URLCONF = 'yatube.urls'
