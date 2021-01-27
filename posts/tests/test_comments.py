@@ -42,6 +42,7 @@ class TestComments(TestCase):
         self.authorized_client_other.force_login(TestComments.other)
 
     def test_auth_user_can_post_comments(self):
+        comments_count = Comment.objects.count()
         form_data = {
             'text': '1234'
             }
@@ -49,8 +50,9 @@ class TestComments(TestCase):
             self.ADD_COMMENT,
             data=form_data,
             follow=True)
-        new_comment = response.context['comments'].last()
-        self.assertNotEqual(new_comment.author, self.post.author)
+        self.assertEqual(Comment.objects.count(), comments_count+1)
+        new_comment = response.context['comments'][0]
+        self.assertEqual(new_comment.author, response.wsgi_request.user)
         self.assertEqual(new_comment.text, form_data['text'])
         self.assertEqual(new_comment.post, self.post)
 

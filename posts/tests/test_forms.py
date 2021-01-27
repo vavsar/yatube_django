@@ -1,6 +1,6 @@
 import shutil
 import tempfile
-
+from django.core.cache import cache
 from django import forms
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -12,6 +12,7 @@ from posts.models import Group, Post, User
 
 USERNAME = 'author'
 SLUG = 'test_slug'
+SLUG_2 = 'slug_2'
 TEXT = 'test_text'
 INDEX_URL = reverse('index')
 NEW_POST = reverse('new_post')
@@ -41,6 +42,8 @@ class TestPostForm(TestCase):
             username=USERNAME)
         cls.group = Group.objects.create(
             slug=SLUG)
+        cls.group_2 = Group.objects.create(
+            slug=SLUG_2)
         cls.post = Post.objects.create(
             author=cls.author,
             group=cls.group,
@@ -74,18 +77,15 @@ class TestPostForm(TestCase):
             NEW_POST,
             data=form_data,
             follow=True)
-        post_from_context = response.context['post']
-        self.assertRedirects(response, INDEX_URL)
-        # Количество постов увеличилось на один
         self.assertEqual(Post.objects.count(), posts_count+1)
-        # новый пост не равен старому
-        self.assertNotEqual(post_from_context, self.post)
+        post = Post.objects.exclude(id=self.post.id)[0]
+        self.assertRedirects(response, INDEX_URL)
         self.assertEqual(
-            post_from_context.author, self.author)
-        self.assertEqual(post_from_context.text, form_data['text'])
-        self.assertEqual(post_from_context.group.id, form_data['group'])
+            post.author, self.author)
+        self.assertEqual(post.text, form_data['text'])
+        self.assertEqual(post.group.id, form_data['group'])
         self.assertEqual(
-            post_from_context.image.file.read(),
+            post.image.file.read(),
             form_data['image'].file.getvalue())
 
     def test_create_post_guest(self):
@@ -109,17 +109,16 @@ class TestPostForm(TestCase):
         posts_count = Post.objects.count()
         form_data = {
             'text': 'new_text',
-            'group': self.group.id,
+            'group': self.group_2.id,
             'image': UPLOADED}
         response = self.authorized_client.post(
             TestPostForm.POST_EDIT_URL,
             data=form_data)
         post_from_context = response.context['post']
-        # Количество постов осталось прежним
         self.assertEqual(Post.objects.count(), posts_count)
-        # Данные изменились
-        self.assertEqual(post_from_context.text, form_data['text'])
         self.assertEqual(post_from_context.group.id, form_data['group'])
+        self.assertEqual(post_from_context.text, form_data['text'])
+        self.assertIsNotNone(post_from_context.image)
 
     def test_edit_post_guest(self):
         '''Гостевой акк не может добавить запись в Post'''
@@ -132,10 +131,8 @@ class TestPostForm(TestCase):
             TestPostForm.POST_EDIT_URL,
             data=form_data,
             follow=True)
-        post_after = Post.objects.get()
-        # Количество постов осталось прежним
         self.assertEqual(Post.objects.count(), posts_count)
-        # Данные не изменились
+        post_after = Post.objects.get()
         self.assertEqual(self.post, post_after)
 
     def test_new_post_show_correct_context(self):

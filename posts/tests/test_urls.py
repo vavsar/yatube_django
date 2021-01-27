@@ -68,8 +68,6 @@ class PostURLTests(TestCase):
                 self.authorized_client_author, 200),
             (FOLLOW_INDEX, self.authorized_client_author, 200)
         )
-        # вкусовщина, а не ошибка! имя path_name
-        # мне подсказал НАСТАВНИК В СЛАКЕ!
         for url, client, status_code in URLS_LIST:
             with self.subTest():
                 self.assertEqual(
