@@ -42,13 +42,13 @@ class PostURLTests(TestCase):
         cls.ADD_COMMENT = reverse(
             'add_comment', args=[cls.post.author.username, cls.post.id])
         cls.REDIRECT_POST_EDIT = (
-            f'{LOGIN}?next={PostURLTests.POST_EDIT_URL}')
+            f'{LOGIN}?next={cls.POST_EDIT_URL}')
         cls.guest_client = Client()
         cls.authorized_client_author = Client()
-        cls.authorized_client_author.force_login(PostURLTests.author)
+        cls.authorized_client_author.force_login(cls.author)
 
     def test_urls_status_code(self):
-        URLS_LIST = (
+        url_list = (
             (ABOUT_AUTHOR, self.guest_client, 200),
             (ABOUT_AUTHOR, self.authorized_client_author, 200),
             (ABOUT_TECH, self.guest_client, 200),
@@ -62,19 +62,19 @@ class PostURLTests(TestCase):
             (GROUP_SLUG_URL, self.guest_client, 200),
             (INDEX_URL, self.guest_client, 200),
             (PROFILE, self.guest_client, 200),
-            (PostURLTests.POST_URL,
+            (self.POST_URL,
                 self.guest_client, 200),
-            (PostURLTests.POST_EDIT_URL,
+            (self.POST_EDIT_URL,
                 self.authorized_client_author, 200),
             (FOLLOW_INDEX, self.authorized_client_author, 200)
         )
-        for url, client, status_code in URLS_LIST:
+        for url, client, status_code in url_list:
             with self.subTest():
                 self.assertEqual(
                     client.get(url).status_code, status_code)
 
     def test_urls_uses_correct_template(self):
-        URL_LIST = (
+        url_list = (
             (URL_404, self.guest_client, 'misc/404.html'),
             (URL_500, self.guest_client, 'misc/500.html'),
             (ABOUT_AUTHOR, self.guest_client, 'about/author.html'),
@@ -84,22 +84,22 @@ class PostURLTests(TestCase):
             (GROUP_SLUG_URL, self.guest_client, 'group.html'),
             (INDEX_URL, self.guest_client, 'index.html'),
             (PROFILE, self.guest_client, 'profile.html'),
-            (PostURLTests.POST_URL,
+            (self.POST_URL,
                 self.guest_client, 'post.html'),
-            (PostURLTests.POST_EDIT_URL,
+            (self.POST_EDIT_URL,
                 self.authorized_client_author, 'post_edit.html'),
         )
-        for url, client, template in URL_LIST:
+        for url, client, template in url_list:
             with self.subTest():
                 self.assertTemplateUsed(client.get(url), template)
 
     def test_urls_correct_redirect(self):
-        URL_LIST = (
+        url_list = (
             (FOLLOW_INDEX, self.guest_client, FOLLOW_REDIRECT),
             (NEW_POST, self.guest_client, NEW_POST_REDIRECT),
-            (PostURLTests.POST_EDIT_URL,
-                self.guest_client, PostURLTests.REDIRECT_POST_EDIT),
+            (self.POST_EDIT_URL,
+                self.guest_client, self.REDIRECT_POST_EDIT),
         )
-        for reverse_name, client, redirect in URL_LIST:
+        for reverse_name, client, redirect in url_list:
             with self.subTest():
                 self.assertRedirects(client.get(reverse_name), redirect)
