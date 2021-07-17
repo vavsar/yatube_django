@@ -50,6 +50,6 @@ class GroupModelTest(TestCase):
             slug='test_slug',
         )
 
-        def test_group_str(self):
-            group = GroupModelTest.group
-            self.assertEquals(str(group), group.title)
+    def test_group_str(self):
+        group = GroupModelTest.group
+        self.assertEquals(str(group), group.title)

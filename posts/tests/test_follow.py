@@ -45,8 +45,8 @@ class FollowTest(TestCase):
     def test_authorized_user_unfollow(self):
         """Тестирование отписывания от пользователей"""
         Follow.objects.create(
-            user=FollowTest.user_follower,
-            author=FollowTest.user_author)
+            user=self.user_follower,
+            author=self.user_author)
         response = self.auth_client_follower.get(PROFILE_UNFOLLOW)
         self.assertEqual(response.status_code, 302)
         self.assertFalse(Follow.objects.filter(
@@ -56,11 +56,11 @@ class FollowTest(TestCase):
     def test_follower_post_added_to_follow(self):
         """Проверка, добавился ли пост подписчика"""
         Follow.objects.create(
-            user=FollowTest.user_follower,
-            author=FollowTest.user_author)
+            user=self.user_follower,
+            author=self.user_author)
         response_follower = self.auth_client_follower.get(
             FOLLOW_INDEX)
-        expected_post = FollowTest.post_not_follower
+        expected_post = self.post_not_follower
         self.assertIn(expected_post,
                       response_follower.context['page'])
 
@@ -68,5 +68,5 @@ class FollowTest(TestCase):
         """Проверка, добавился ли пост автора"""
         response_not_follower = self.auth_client_author.get(
             FOLLOW_INDEX)
-        self.assertNotIn(FollowTest.post_not_follower,
+        self.assertNotIn(self.post_not_follower,
                          response_not_follower.context['page'])

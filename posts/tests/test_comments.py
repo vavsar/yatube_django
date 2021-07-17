@@ -13,7 +13,6 @@ class TestComments(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-
         cls.author = User.objects.create_user(
             username=USERNAME)
         cls.other = User.objects.create_user(

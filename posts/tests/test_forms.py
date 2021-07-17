@@ -88,7 +88,6 @@ class TestPostForm(TestCase):
             form_data['image'].file.getvalue())
 
     def test_create_post_guest(self):
-        '''Гостевой акк не создает запись в Post'''
         posts_count = Post.objects.count()
         form_data = {
             'text': 'new_text',
@@ -98,9 +97,7 @@ class TestPostForm(TestCase):
             NEW_POST,
             data=form_data,
             follow=True)
-        # Редирект на страницу логина
         self.assertRedirects(response, TestPostForm.expected_redirect_new)
-        # Количество постов не изменилось
         self.assertEqual(Post.objects.count(), posts_count)
 
     def test_edit_post_auth(self):
